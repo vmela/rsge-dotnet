@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>RsGe.NET.WayBill</RootNamespace>
+    <PackageId>RsGe.NET.WayBill</PackageId>
+    <Description>RS.GE (Georgian Revenue Service) .NET SDK - WayBill service integration</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RsGe.NET.Core\RsGe.NET.Core.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,10 @@
+services:
+  rsge-server:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - RsGe__ServiceUser=${RSGE_SERVICE_USER}
+      - RsGe__ServicePassword=${RSGE_SERVICE_PASSWORD}
+      - RsGe__CompanyTin=${RSGE_COMPANY_TIN}
+      - RsGe__DefaultStartAddress=${RSGE_DEFAULT_START_ADDRESS:-}

@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/RsGe.NET.Core/RsGe.NET.Core.csproj" />
+    <Project Path="src/RsGe.NET.Server/RsGe.NET.Server.csproj" />
+    <Project Path="src/RsGe.NET.WayBill/RsGe.NET.WayBill.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/RsGe.NET.WayBill.Tests/RsGe.NET.WayBill.Tests.csproj" />
+  </Folder>
+</Solution>
