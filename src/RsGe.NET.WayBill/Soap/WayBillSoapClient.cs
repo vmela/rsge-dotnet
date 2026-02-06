@@ -531,14 +531,13 @@ public class WayBillSoapClient : SoapClientBase, IWayBillSoapClient
     private static List<WayBillType> ParseWayBillTypes(XDocument doc)
     {
         var result = new List<WayBillType>();
-        var ns = GetResponseNamespace();
 
-        foreach (var typeElement in doc.Descendants(ns + "WAYBILL_TYPE"))
+        foreach (var typeElement in doc.Descendants().Where(e => e.Name.LocalName == "WAYBILL_TYPE"))
         {
             result.Add(new WayBillType
             {
-                Id = int.TryParse(typeElement.Element(ns + "ID")?.Value, out var id) ? id : 0,
-                Name = typeElement.Element(ns + "NAME")?.Value ?? string.Empty
+                Id = int.TryParse(typeElement.Elements().FirstOrDefault(e => e.Name.LocalName == "ID")?.Value, out var id) ? id : 0,
+                Name = typeElement.Elements().FirstOrDefault(e => e.Name.LocalName == "NAME")?.Value ?? string.Empty
             });
         }
 
@@ -548,14 +547,13 @@ public class WayBillSoapClient : SoapClientBase, IWayBillSoapClient
     private static List<WayBillUnit> ParseWayBillUnits(XDocument doc)
     {
         var result = new List<WayBillUnit>();
-        var ns = GetResponseNamespace();
 
-        foreach (var unitElement in doc.Descendants(ns + "WAYBILL_UNIT"))
+        foreach (var unitElement in doc.Descendants().Where(e => e.Name.LocalName == "WAYBILL_UNIT"))
         {
             result.Add(new WayBillUnit
             {
-                Id = int.TryParse(unitElement.Element(ns + "ID")?.Value, out var id) ? id : 0,
-                Name = unitElement.Element(ns + "NAME")?.Value ?? string.Empty
+                Id = int.TryParse(unitElement.Elements().FirstOrDefault(e => e.Name.LocalName == "ID")?.Value, out var id) ? id : 0,
+                Name = unitElement.Elements().FirstOrDefault(e => e.Name.LocalName == "NAME")?.Value ?? string.Empty
             });
         }
 
@@ -565,14 +563,13 @@ public class WayBillSoapClient : SoapClientBase, IWayBillSoapClient
     private static List<TransportType> ParseTransportTypes(XDocument doc)
     {
         var result = new List<TransportType>();
-        var ns = GetResponseNamespace();
 
-        foreach (var typeElement in doc.Descendants(ns + "TRANS_TYPE"))
+        foreach (var typeElement in doc.Descendants().Where(e => e.Name.LocalName == "TRANSPORT_TYPE"))
         {
             result.Add(new TransportType
             {
-                Id = int.TryParse(typeElement.Element(ns + "ID")?.Value, out var id) ? id : 0,
-                Name = typeElement.Element(ns + "NAME")?.Value ?? string.Empty
+                Id = int.TryParse(typeElement.Elements().FirstOrDefault(e => e.Name.LocalName == "ID")?.Value, out var id) ? id : 0,
+                Name = typeElement.Elements().FirstOrDefault(e => e.Name.LocalName == "NAME")?.Value ?? string.Empty
             });
         }
 
@@ -584,19 +581,19 @@ public class WayBillSoapClient : SoapClientBase, IWayBillSoapClient
         var result = new List<ErrorCode>();
         var ns = GetResponseNamespace();
 
-        var errorElements = doc.Descendants(ns + "ERROR_CODE")
-            .Concat(doc.Descendants(ns + "ERROR"))
-            .Concat(doc.Descendants(ns + "ERRORCODE"));
+        var errorElements = doc.Descendants().Where(e =>
+            e.Name.LocalName is "ERROR_CODE" or "ERROR" or "ERRORCODE");
 
         foreach (var element in errorElements)
         {
+            string GetVal(string name) => element.Elements().FirstOrDefault(e => e.Name.LocalName == name)?.Value ?? string.Empty;
+
             result.Add(new ErrorCode
             {
-                Id = int.TryParse(element.Element(ns + "ID")?.Value, out var id) ? id : 0,
-                Text = element.Element(ns + "TEXT")?.Value
-                    ?? element.Element(ns + "NAME")?.Value
-                    ?? element.Element(ns + "DESCRIPTION")?.Value
-                    ?? string.Empty
+                Id = int.TryParse(GetVal("ID"), out var id) ? id : 0,
+                Text = GetVal("TEXT") is { Length: > 0 } t ? t
+                    : GetVal("NAME") is { Length: > 0 } n ? n
+                    : GetVal("DESCRIPTION")
             });
         }
 
@@ -640,17 +637,18 @@ public class WayBillSoapClient : SoapClientBase, IWayBillSoapClient
     private static List<ServiceUser> ParseServiceUsers(XDocument doc)
     {
         var result = new List<ServiceUser>();
-        var ns = GetResponseNamespace();
 
-        foreach (var userElement in doc.Descendants(ns + "ServiceUser"))
+        foreach (var userElement in doc.Descendants().Where(e => e.Name.LocalName == "ServiceUser"))
         {
+            string GetVal(string name) => userElement.Elements().FirstOrDefault(e => e.Name.LocalName == name)?.Value ?? string.Empty;
+
             result.Add(new ServiceUser
             {
-                Id = int.TryParse(userElement.Element(ns + "ID")?.Value, out var id) ? id : 0,
-                UserName = userElement.Element(ns + "USER_NAME")?.Value ?? string.Empty,
-                UnId = userElement.Element(ns + "UN_ID")?.Value ?? string.Empty,
-                Ip = userElement.Element(ns + "IP")?.Value ?? string.Empty,
-                Name = userElement.Element(ns + "NAME")?.Value ?? string.Empty
+                Id = int.TryParse(GetVal("ID"), out var id) ? id : 0,
+                UserName = GetVal("USER_NAME"),
+                UnId = GetVal("UN_ID"),
+                Ip = GetVal("IP"),
+                Name = GetVal("NAME")
             });
         }
 
@@ -659,17 +657,18 @@ public class WayBillSoapClient : SoapClientBase, IWayBillSoapClient
 
     private static BarCode? ParseBarCode(XDocument doc)
     {
-        var ns = GetResponseNamespace();
-        var element = doc.Descendants(ns + "BAR_CODE_INFO").FirstOrDefault();
+        var element = doc.Descendants().FirstOrDefault(e => e.Name.LocalName == "BAR_CODE_INFO");
 
         if (element == null) return null;
 
+        string GetVal(string name) => element.Elements().FirstOrDefault(e => e.Name.LocalName == name)?.Value ?? string.Empty;
+
         return new BarCode
         {
-            Code = element.Element(ns + "BAR_CODE")?.Value ?? string.Empty,
-            ProductName = element.Element(ns + "GOOD_NAME")?.Value ?? string.Empty,
-            UnitId = int.TryParse(element.Element(ns + "UNIT_ID")?.Value, out var unitId) ? unitId : 0,
-            UnitName = element.Element(ns + "UNIT_NAME")?.Value ?? string.Empty
+            Code = GetVal("BAR_CODE"),
+            ProductName = GetVal("GOOD_NAME"),
+            UnitId = int.TryParse(GetVal("UNIT_ID"), out var unitId) ? unitId : 0,
+            UnitName = GetVal("UNIT_NAME")
         };
     }
 
@@ -679,6 +678,7 @@ public class WayBillSoapClient : SoapClientBase, IWayBillSoapClient
         var name = doc.Descendants(ns + "get_name_from_tinResult").FirstOrDefault()?.Value;
 
         var isValid = !string.IsNullOrWhiteSpace(name)
+            && !name.Equals("null", StringComparison.OrdinalIgnoreCase)
             && !name.StartsWith("-")
             && !name.Contains("არ არის")
             && !name.Contains("არასწორი")
