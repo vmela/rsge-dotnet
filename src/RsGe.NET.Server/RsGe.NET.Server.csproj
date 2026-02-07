@@ -10,6 +10,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\RsGe.NET.WayBill\RsGe.NET.WayBill.csproj" />
+    <ProjectReference Include="..\RsGe.NET.TaxPayer\RsGe.NET.TaxPayer.csproj" />
+    <ProjectReference Include="..\RsGe.NET.Invoice\RsGe.NET.Invoice.csproj" />
+    <ProjectReference Include="..\RsGe.NET.SpecInvoice\RsGe.NET.SpecInvoice.csproj" />
   </ItemGroup>
 
   <ItemGroup>

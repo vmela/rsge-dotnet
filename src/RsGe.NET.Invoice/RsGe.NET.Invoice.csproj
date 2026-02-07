@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>RsGe.NET.Invoice</RootNamespace>
+    <PackageId>RsGe.NET.Invoice</PackageId>
+    <Description>RS.GE (Georgian Revenue Service) .NET SDK - Invoice (NTOS) service integration</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RsGe.NET.Core\RsGe.NET.Core.csproj" />
+  </ItemGroup>
+
+</Project>

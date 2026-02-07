@@ -2,6 +2,13 @@ using System.Text.Json.Serialization;
 using RsGe.NET.WayBill;
 using RsGe.NET.WayBill.Models;
 using RsGe.NET.WayBill.Services;
+using RsGe.NET.TaxPayer;
+using RsGe.NET.TaxPayer.Services;
+using RsGe.NET.Invoice;
+using RsGe.NET.Invoice.Services;
+using RsGe.NET.Invoice.Soap.Models;
+using RsGe.NET.SpecInvoice;
+using RsGe.NET.SpecInvoice.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,8 +18,11 @@ builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
 
-// Add RS.GE WayBill services from configuration
+// Add RS.GE services from configuration
 builder.Services.AddRsGeWayBillServices(builder.Configuration);
+builder.Services.AddRsGeTaxPayerServices(builder.Configuration);
+builder.Services.AddRsGeInvoiceServices(builder.Configuration);
+builder.Services.AddRsGeSpecInvoiceServices(builder.Configuration);
 
 // Add CORS
 builder.Services.AddCors(options =>
@@ -142,6 +152,109 @@ reports.MapGet("/incoming", async (
     IRsGeWayBillService svc,
     CancellationToken ct) =>
     Results.Ok(await svc.GetIncomingWaybillsAsync(from, to, statuses, ct)));
+
+// ── TaxPayer ───────────────────────────────────────────────────────
+
+var taxpayer = app.MapGroup("/api/taxpayer").WithTags("Taxpayer");
+
+taxpayer.MapGet("/{tin}", async (string tin, IRsGeTaxPayerService svc, CancellationToken ct) =>
+{
+    var result = await svc.GetTaxPayerInfoAsync(tin, ct);
+    return result is not null ? Results.Ok(result) : Results.NotFound();
+});
+
+taxpayer.MapGet("/{tin}/contacts", async (string tin, IRsGeTaxPayerService svc, CancellationToken ct) =>
+{
+    var result = await svc.GetTaxPayerContactsAsync(tin, ct);
+    return result is not null ? Results.Ok(result) : Results.NotFound();
+});
+
+taxpayer.MapGet("/{tin}/legal", async (string tin, IRsGeTaxPayerService svc, CancellationToken ct) =>
+{
+    var result = await svc.GetLegalPersonInfoAsync(tin, ct);
+    return result is not null ? Results.Ok(result) : Results.NotFound();
+});
+
+taxpayer.MapGet("/{tin}/nace", async (string tin, IRsGeTaxPayerService svc, CancellationToken ct) =>
+    Results.Ok(await svc.GetNaceCodesAsync(tin, ct)));
+
+taxpayer.MapGet("/{tin}/vat-status", async (string tin, IRsGeTaxPayerService svc, CancellationToken ct) =>
+    Results.Ok(new { isVatPayer = await svc.IsVatPayerAsync(tin, ct) }));
+
+taxpayer.MapGet("/z-reports", async (DateTime from, DateTime to, IRsGeTaxPayerService svc, CancellationToken ct) =>
+    Results.Ok(await svc.GetZReportDetailsAsync(from, to, ct)));
+
+taxpayer.MapGet("/z-reports/summary", async (DateTime from, DateTime to, IRsGeTaxPayerService svc, CancellationToken ct) =>
+    Results.Ok(await svc.GetZReportSummaryAsync(from, to, ct)));
+
+taxpayer.MapGet("/{tin}/comparison-act", async (string tin, DateTime from, DateTime to, IRsGeTaxPayerService svc, CancellationToken ct) =>
+    Results.Ok(await svc.GetComparisonActAsync(tin, from, to, ct)));
+
+taxpayer.MapGet("/{tin}/waybill-totals", async (string tin, DateTime from, DateTime to, IRsGeTaxPayerService svc, CancellationToken ct) =>
+    Results.Ok(await svc.GetWaybillMonthlyTotalsAsync(tin, from, to, ct)));
+
+// ── Invoices ───────────────────────────────────────────────────────
+
+var invoices = app.MapGroup("/api/invoices").WithTags("Invoices");
+
+invoices.MapGet("/{id:long}", async (long id, IRsGeInvoiceService svc, CancellationToken ct) =>
+{
+    var result = await svc.GetInvoiceAsync(id, ct);
+    return result is not null ? Results.Ok(result) : Results.NotFound();
+});
+
+invoices.MapGet("/seller", async (
+    int unId, DateTime? from, DateTime? to,
+    IRsGeInvoiceService svc, CancellationToken ct) =>
+    Results.Ok(await svc.GetSellerInvoicesAsync(unId, from, to, cancellationToken: ct)));
+
+invoices.MapGet("/buyer", async (
+    int unId, DateTime? from, DateTime? to,
+    IRsGeInvoiceService svc, CancellationToken ct) =>
+    Results.Ok(await svc.GetBuyerInvoicesAsync(unId, from, to, cancellationToken: ct)));
+
+invoices.MapPost("/{id:long}/status/{status:int}", async (long id, int status, IRsGeInvoiceService svc, CancellationToken ct) =>
+    Results.Ok(await svc.ChangeInvoiceStatusAsync(id, status, ct)));
+
+invoices.MapPost("/{id:long}/accept/{status:int}", async (long id, int status, IRsGeInvoiceService svc, CancellationToken ct) =>
+    Results.Ok(await svc.AcceptInvoiceAsync(id, status, ct)));
+
+invoices.MapGet("/{id:long}/descriptions", async (long id, IRsGeInvoiceService svc, CancellationToken ct) =>
+    Results.Ok(await svc.GetInvoiceDescriptionsAsync(id, ct)));
+
+invoices.MapGet("/lookup/tin/{unId:int}", async (int unId, IRsGeInvoiceService svc, CancellationToken ct) =>
+    Results.Ok(await svc.LookupTinFromUnIdAsync(unId, ct)));
+
+invoices.MapGet("/lookup/unid/{tin}", async (string tin, IRsGeInvoiceService svc, CancellationToken ct) =>
+    Results.Ok(await svc.LookupUnIdFromTinAsync(tin, ct)));
+
+// ── Special Invoices ───────────────────────────────────────────────
+
+var specInvoices = app.MapGroup("/api/spec-invoices").WithTags("Special Invoices");
+
+specInvoices.MapGet("/{id:int}", async (int id, IRsGeSpecInvoiceService svc, CancellationToken ct) =>
+{
+    var result = await svc.GetInvoiceAsync(id, ct);
+    return result is not null ? Results.Ok(result) : Results.NotFound();
+});
+
+specInvoices.MapPost("/{id:int}/status/{status:int}", async (int id, int status, IRsGeSpecInvoiceService svc, CancellationToken ct) =>
+    Results.Ok(await svc.ChangeStatusAsync(id, status, ct)));
+
+specInvoices.MapPost("/{id:int}/accept/{status:int}", async (int id, int status, IRsGeSpecInvoiceService svc, CancellationToken ct) =>
+    Results.Ok(await svc.AcceptInvoiceAsync(id, status, ct)));
+
+specInvoices.MapGet("/products", async (IRsGeSpecInvoiceService svc, CancellationToken ct) =>
+    Results.Ok(await svc.GetSpecProductsAsync(ct)));
+
+specInvoices.MapPost("/{id:int}/transport/start", async (int id, IRsGeSpecInvoiceService svc, CancellationToken ct) =>
+    Results.Ok(await svc.StartTransportAsync(id, ct)));
+
+specInvoices.MapGet("/org-objects/{unId:int}", async (int unId, IRsGeSpecInvoiceService svc, CancellationToken ct) =>
+{
+    var result = await svc.GetOrganizationObjectsAsync(unId, ct);
+    return result is not null ? Results.Ok(result) : Results.NotFound();
+});
 
 // ── Health Check ────────────────────────────────────────────────────
 

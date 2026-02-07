@@ -11,7 +11,7 @@
     <PackageProjectUrl>https://github.com/vmela/rsge-dotnet</PackageProjectUrl>
     <RepositoryUrl>https://github.com/vmela/rsge-dotnet</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageTags>rsge;georgia;revenue-service;waybill;soap;rs.ge</PackageTags>
+    <PackageTags>rsge;georgia;revenue-service;waybill;invoice;taxpayer;specinvoice;soap;rs.ge</PackageTags>
     <Description>RS.GE (Georgian Revenue Service) .NET SDK</Description>
 
     <!-- Versioning -->

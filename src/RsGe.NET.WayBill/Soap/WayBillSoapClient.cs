@@ -98,6 +98,13 @@ public class WayBillSoapClient : SoapClientBase, IWayBillSoapClient
         return ParseBoolResponse(response, "update_service_userResult");
     }
 
+    public async Task<DateTime> GetServerTimeAsync(CancellationToken cancellationToken = default)
+    {
+        var response = await SendSoapRequestAsync("get_server_time", new Dictionary<string, string>(), cancellationToken);
+        var value = ParseStringResponse(response, "get_server_timeResult");
+        return DateTime.TryParse(value, out var dt) ? dt : DateTime.UtcNow;
+    }
+
     #endregion
 
     #region Reference Data Methods
@@ -142,6 +149,27 @@ public class WayBillSoapClient : SoapClientBase, IWayBillSoapClient
         return ParseErrorCodes(response);
     }
 
+    public async Task<List<AkcizCode>> GetAkcizCodesAsync(string serviceUser, string servicePassword, string searchText = "", CancellationToken cancellationToken = default)
+    {
+        var response = await SendSoapRequestAsync("get_akciz_codes", new Dictionary<string, string>
+        {
+            ["su"] = serviceUser,
+            ["sp"] = servicePassword,
+            ["s_text"] = searchText
+        }, cancellationToken);
+        return ParseAkcizCodes(response);
+    }
+
+    public async Task<List<WoodType>> GetWoodTypesAsync(string serviceUser, string servicePassword, CancellationToken cancellationToken = default)
+    {
+        var response = await SendSoapRequestAsync("get_wood_types", new Dictionary<string, string>
+        {
+            ["su"] = serviceUser,
+            ["sp"] = servicePassword
+        }, cancellationToken);
+        return ParseWoodTypes(response);
+    }
+
     #endregion
 
     #region Bar Code Methods
@@ -170,9 +198,20 @@ public class WayBillSoapClient : SoapClientBase, IWayBillSoapClient
         return ParseBoolResponse(response, "save_bar_codeResult");
     }
 
+    public async Task<bool> DeleteBarCodeAsync(string serviceUser, string servicePassword, string barCode, CancellationToken cancellationToken = default)
+    {
+        var response = await SendSoapRequestAsync("delete_bar_code", new Dictionary<string, string>
+        {
+            ["su"] = serviceUser,
+            ["sp"] = servicePassword,
+            ["bar_code"] = barCode
+        }, cancellationToken);
+        return ParseBoolResponse(response, "delete_bar_codeResult");
+    }
+
     #endregion
 
-    #region TIN Lookup
+    #region TIN / Payer Lookup
 
     public async Task<TinInfoResponse?> GetNameFromTinAsync(string serviceUser, string servicePassword, string tin, CancellationToken cancellationToken = default)
     {
@@ -183,6 +222,50 @@ public class WayBillSoapClient : SoapClientBase, IWayBillSoapClient
             ["tin"] = tin
         }, cancellationToken);
         return ParseTinInfo(response, tin);
+    }
+
+    public async Task<string> GetTinFromUnIdAsync(string serviceUser, string servicePassword, int unId, CancellationToken cancellationToken = default)
+    {
+        var response = await SendSoapRequestAsync("get_tin_from_un_id", new Dictionary<string, string>
+        {
+            ["su"] = serviceUser,
+            ["sp"] = servicePassword,
+            ["un_id"] = unId.ToString()
+        }, cancellationToken);
+        return ParseStringResponse(response, "get_tin_from_un_idResult");
+    }
+
+    public async Task<string> GetPayerTypeFromUnIdAsync(string serviceUser, string servicePassword, int unId, CancellationToken cancellationToken = default)
+    {
+        var response = await SendSoapRequestAsync("get_payer_type_from_un_id", new Dictionary<string, string>
+        {
+            ["su"] = serviceUser,
+            ["sp"] = servicePassword,
+            ["un_id"] = unId.ToString()
+        }, cancellationToken);
+        return ParseStringResponse(response, "get_payer_type_from_un_idResult");
+    }
+
+    public async Task<bool> IsVatPayerAsync(string serviceUser, string servicePassword, int unId, CancellationToken cancellationToken = default)
+    {
+        var response = await SendSoapRequestAsync("is_vat_payer", new Dictionary<string, string>
+        {
+            ["su"] = serviceUser,
+            ["sp"] = servicePassword,
+            ["un_id"] = unId.ToString()
+        }, cancellationToken);
+        return ParseBoolResponse(response, "is_vat_payerResult");
+    }
+
+    public async Task<bool> IsVatPayerByTinAsync(string serviceUser, string servicePassword, string tin, CancellationToken cancellationToken = default)
+    {
+        var response = await SendSoapRequestAsync("is_vat_payer_tin", new Dictionary<string, string>
+        {
+            ["su"] = serviceUser,
+            ["sp"] = servicePassword,
+            ["tin"] = tin
+        }, cancellationToken);
+        return ParseBoolResponse(response, "is_vat_payer_tinResult");
     }
 
     #endregion
@@ -223,6 +306,36 @@ public class WayBillSoapClient : SoapClientBase, IWayBillSoapClient
         return ParseWayBillsResponse(response);
     }
 
+    public async Task<WayBillDocument?> GetWayBillByNumberAsync(string serviceUser, string servicePassword, string waybillNumber, CancellationToken cancellationToken = default)
+    {
+        var response = await SendSoapRequestAsync("get_waybill_by_number", new Dictionary<string, string>
+        {
+            ["su"] = serviceUser,
+            ["sp"] = servicePassword,
+            ["waybill_number"] = waybillNumber
+        }, cancellationToken);
+        return ParseWayBill(response);
+    }
+
+    public async Task<GetWayBillsResponse> GetWayBillsExAsync(string serviceUser, string servicePassword, GetWayBillsExRequest request, CancellationToken cancellationToken = default)
+    {
+        var response = await SendSoapRequestAsync("get_waybills_ex", BuildExFilterParams(serviceUser, servicePassword, request), cancellationToken);
+        return ParseWayBillsResponse(response);
+    }
+
+    public async Task<GetWayBillsResponse> GetWayBillsV1Async(string serviceUser, string servicePassword, string? buyerTin, DateTime? lastUpdateFrom, DateTime? lastUpdateTo, CancellationToken cancellationToken = default)
+    {
+        var response = await SendSoapRequestAsync("get_waybills_v1", new Dictionary<string, string>
+        {
+            ["su"] = serviceUser,
+            ["sp"] = servicePassword,
+            ["buyer_tin"] = buyerTin ?? "",
+            ["last_update_date_s"] = lastUpdateFrom?.ToString("yyyy-MM-dd HH:mm:ss") ?? "",
+            ["last_update_date_e"] = lastUpdateTo?.ToString("yyyy-MM-dd HH:mm:ss") ?? ""
+        }, cancellationToken);
+        return ParseWayBillsResponse(response);
+    }
+
     public async Task<GetWayBillsResponse> GetBuyerWayBillsAsync(string serviceUser, string servicePassword, GetBuyerWayBillsRequest request, CancellationToken cancellationToken = default)
     {
         var response = await SendSoapRequestAsync("get_buyer_waybills", new Dictionary<string, string>
@@ -235,6 +348,70 @@ public class WayBillSoapClient : SoapClientBase, IWayBillSoapClient
             ["status"] = (request.Status ?? 0).ToString()
         }, cancellationToken);
         return ParseWayBillsResponse(response);
+    }
+
+    public async Task<GetWayBillsResponse> GetBuyerWayBillsExAsync(string serviceUser, string servicePassword, GetWayBillsExRequest request, CancellationToken cancellationToken = default)
+    {
+        var response = await SendSoapRequestAsync("get_buyer_waybills_ex", BuildExFilterParams(serviceUser, servicePassword, request), cancellationToken);
+        return ParseWayBillsResponse(response);
+    }
+
+    public async Task<List<WayBillGood>> GetWayBillGoodsListAsync(string serviceUser, string servicePassword, GetWayBillsExRequest request, CancellationToken cancellationToken = default)
+    {
+        var response = await SendSoapRequestAsync("get_waybill_goods_list", BuildExFilterParams(serviceUser, servicePassword, request), cancellationToken);
+        return ParseGoodsList(response);
+    }
+
+    public async Task<List<WayBillGood>> GetBuyerWayBillGoodsListAsync(string serviceUser, string servicePassword, GetWayBillsExRequest request, CancellationToken cancellationToken = default)
+    {
+        var response = await SendSoapRequestAsync("get_buyer_waybilll_goods_list", BuildExFilterParams(serviceUser, servicePassword, request), cancellationToken);
+        return ParseGoodsList(response);
+    }
+
+    public async Task<GetWayBillsResponse> GetCompletedWayBillsByDateAsync(string serviceUser, string servicePassword, DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default)
+    {
+        var response = await SendSoapRequestAsync("get_c_waybill", new Dictionary<string, string>
+        {
+            ["su"] = serviceUser,
+            ["sp"] = servicePassword,
+            ["s_dt"] = startDate.ToString("yyyy-MM-dd HH:mm:ss"),
+            ["e_dt"] = endDate.ToString("yyyy-MM-dd HH:mm:ss")
+        }, cancellationToken);
+        return ParseWayBillsResponse(response);
+    }
+
+    public async Task<GetWayBillsResponse> GetAdjustedWayBillsAsync(string serviceUser, string servicePassword, int waybillId, CancellationToken cancellationToken = default)
+    {
+        var response = await SendSoapRequestAsync("get_adjusted_waybills", new Dictionary<string, string>
+        {
+            ["su"] = serviceUser,
+            ["sp"] = servicePassword,
+            ["waybill_id"] = waybillId.ToString()
+        }, cancellationToken);
+        return ParseWayBillsResponse(response);
+    }
+
+    public async Task<WayBillDocument?> GetAdjustedWayBillAsync(string serviceUser, string servicePassword, int id, CancellationToken cancellationToken = default)
+    {
+        var response = await SendSoapRequestAsync("get_adjusted_waybill", new Dictionary<string, string>
+        {
+            ["su"] = serviceUser,
+            ["sp"] = servicePassword,
+            ["id"] = id.ToString()
+        }, cancellationToken);
+        return ParseWayBill(response);
+    }
+
+    public async Task<byte[]> GetPrintPdfAsync(string serviceUser, string servicePassword, int waybillId, CancellationToken cancellationToken = default)
+    {
+        var response = await SendSoapRequestAsync("get_print_pdf", new Dictionary<string, string>
+        {
+            ["su"] = serviceUser,
+            ["sp"] = servicePassword,
+            ["waybill_id"] = waybillId.ToString()
+        }, cancellationToken);
+        var base64 = ParseStringResponse(response, "get_print_pdfResult");
+        return string.IsNullOrEmpty(base64) ? Array.Empty<byte>() : Convert.FromBase64String(base64);
     }
 
     #endregion
@@ -308,6 +485,117 @@ public class WayBillSoapClient : SoapClientBase, IWayBillSoapClient
         return ParseOperationResponse(response, waybillId, "ref_waybillResult");
     }
 
+    public async Task<WayBillOperationResponse> SendWayBillVdAsync(string serviceUser, string servicePassword, int waybillId, DateTime beginDate, CancellationToken cancellationToken = default)
+    {
+        var response = await SendSoapRequestAsync("send_waybil_vd", new Dictionary<string, string>
+        {
+            ["su"] = serviceUser,
+            ["sp"] = servicePassword,
+            ["waybill_id"] = waybillId.ToString(),
+            ["begin_date"] = beginDate.ToString("yyyy-MM-dd HH:mm:ss")
+        }, cancellationToken);
+        return ParseOperationResponse(response, waybillId, "send_waybil_vdResult");
+    }
+
+    public async Task<WayBillOperationResponse> CloseWayBillVdAsync(string serviceUser, string servicePassword, int waybillId, DateTime deliveryDate, CancellationToken cancellationToken = default)
+    {
+        var response = await SendSoapRequestAsync("close_waybill_vd", new Dictionary<string, string>
+        {
+            ["su"] = serviceUser,
+            ["sp"] = servicePassword,
+            ["waybill_id"] = waybillId.ToString(),
+            ["delivery_date"] = deliveryDate.ToString("yyyy-MM-dd HH:mm:ss")
+        }, cancellationToken);
+        return ParseOperationResponse(response, waybillId, "close_waybill_vdResult");
+    }
+
+    public async Task<WayBillOperationResponse> RefWayBillVdAsync(string serviceUser, string servicePassword, int waybillId, string? comment = null, CancellationToken cancellationToken = default)
+    {
+        var response = await SendSoapRequestAsync("ref_waybill_vd", new Dictionary<string, string>
+        {
+            ["su"] = serviceUser,
+            ["sp"] = servicePassword,
+            ["waybill_id"] = waybillId.ToString(),
+            ["comment"] = comment ?? ""
+        }, cancellationToken);
+        return ParseOperationResponse(response, waybillId, "ref_waybill_vdResult");
+    }
+
+    #endregion
+
+    #region Transporter Operations
+
+    public async Task<bool> SaveWayBillTransporterAsync(string serviceUser, string servicePassword, SaveWayBillTransporterRequest request, CancellationToken cancellationToken = default)
+    {
+        var response = await SendSoapRequestAsync("save_waybill_transporter", new Dictionary<string, string>
+        {
+            ["su"] = serviceUser,
+            ["sp"] = servicePassword,
+            ["waybill_id"] = request.WaybillId.ToString(),
+            ["car_number"] = request.CarNumber,
+            ["driver_tin"] = request.DriverTin,
+            ["chek_driver_tin"] = request.CheckDriverTin.ToString(),
+            ["driver_name"] = request.DriverName,
+            ["trans_id"] = request.TransportTypeId.ToString(),
+            ["trans_txt"] = request.TransportTypeTxt ?? "",
+            ["reception_info"] = request.ReceptionInfo ?? "",
+            ["receiver_info"] = request.ReceiverInfo ?? ""
+        }, cancellationToken);
+        return ParseBoolResponse(response, "save_waybill_transporterResult");
+    }
+
+    public async Task<WayBillOperationResponse> SendWayBillTransporterAsync(string serviceUser, string servicePassword, int waybillId, DateTime beginDate, CancellationToken cancellationToken = default)
+    {
+        var response = await SendSoapRequestAsync("send_waybill_transporter", new Dictionary<string, string>
+        {
+            ["su"] = serviceUser,
+            ["sp"] = servicePassword,
+            ["waybill_id"] = waybillId.ToString(),
+            ["begin_date"] = beginDate.ToString("yyyy-MM-dd HH:mm:ss")
+        }, cancellationToken);
+        return ParseOperationResponse(response, waybillId, "send_waybill_transporterResult");
+    }
+
+    public async Task<WayBillOperationResponse> CloseWayBillTransporterAsync(string serviceUser, string servicePassword, CloseWayBillTransporterRequest request, CancellationToken cancellationToken = default)
+    {
+        var response = await SendSoapRequestAsync("close_waybill_transporter", new Dictionary<string, string>
+        {
+            ["su"] = serviceUser,
+            ["sp"] = servicePassword,
+            ["waybill_id"] = request.WaybillId.ToString(),
+            ["reception_info"] = request.ReceptionInfo ?? "",
+            ["receiver_info"] = request.ReceiverInfo ?? "",
+            ["delivery_date"] = request.DeliveryDate.ToString("yyyy-MM-dd HH:mm:ss")
+        }, cancellationToken);
+        return ParseOperationResponse(response, request.WaybillId, "close_waybill_transporterResult");
+    }
+
+    public async Task<GetWayBillsResponse> GetTransporterWayBillsAsync(string serviceUser, string servicePassword, GetTransporterWayBillsRequest request, CancellationToken cancellationToken = default)
+    {
+        var response = await SendSoapRequestAsync("get_transporter_waybills", new Dictionary<string, string>
+        {
+            ["su"] = serviceUser,
+            ["sp"] = servicePassword,
+            ["buyer_tin"] = request.BuyerTin ?? "",
+            ["statuses"] = request.Statuses ?? "",
+            ["car_number"] = request.CarNumber ?? "",
+            ["begin_date_s"] = request.BeginDateFrom?.ToString("yyyy-MM-dd") ?? "",
+            ["begin_date_e"] = request.BeginDateTo?.ToString("yyyy-MM-dd") ?? "",
+            ["create_date_s"] = request.CreateDateFrom?.ToString("yyyy-MM-dd") ?? "",
+            ["create_date_e"] = request.CreateDateTo?.ToString("yyyy-MM-dd") ?? "",
+            ["delivery_date_s"] = request.DeliveryDateFrom?.ToString("yyyy-MM-dd") ?? "",
+            ["delivery_date_e"] = request.DeliveryDateTo?.ToString("yyyy-MM-dd") ?? "",
+            ["close_date_s"] = request.CloseDateFrom?.ToString("yyyy-MM-dd") ?? "",
+            ["close_date_e"] = request.CloseDateTo?.ToString("yyyy-MM-dd") ?? "",
+            ["full_amount"] = request.FullAmount ?? "",
+            ["waybill_number"] = request.WaybillNumber ?? "",
+            ["s_user_ids"] = request.SUserIds ?? "",
+            ["comment"] = request.Comment ?? "",
+            ["is_confirmed"] = (request.IsConfirmed ?? 0).ToString()
+        }, cancellationToken);
+        return ParseWayBillsResponse(response);
+    }
+
     #endregion
 
     #region Sub-Waybill Operations
@@ -358,6 +646,63 @@ public class WayBillSoapClient : SoapClientBase, IWayBillSoapClient
 
     #endregion
 
+    #region Template Operations
+
+    public async Task<bool> SaveWayBillTemplateAsync(string serviceUser, string servicePassword, string templateName, SaveWayBillRequest waybill, CancellationToken cancellationToken = default)
+    {
+        var waybillXml = BuildWaybillXml(waybill);
+        var parameters = new Dictionary<string, string>
+        {
+            ["su"] = serviceUser,
+            ["sp"] = servicePassword,
+            ["v_name"] = templateName
+        };
+        // Template save uses XML content like save_waybill
+        var soapEnvelope = BuildSoapEnvelopeWithXml("save_waybill_tamplate", serviceUser, servicePassword, waybillXml);
+        var request = new HttpRequestMessage(HttpMethod.Post, ServiceUrl);
+        request.Content = new StringContent(soapEnvelope, Encoding.UTF8, "text/xml");
+        request.Headers.Add("SOAPAction", $"{SoapNamespace}save_waybill_tamplate");
+        var httpResponse = await HttpClient.SendAsync(request, cancellationToken);
+        var responseContent = await httpResponse.Content.ReadAsStringAsync(cancellationToken);
+        var doc = XDocument.Parse(responseContent);
+        return ParseBoolResponse(doc, "save_waybill_tamplateResult");
+    }
+
+    public async Task<List<WayBillTemplate>> GetWayBillTemplatesAsync(string serviceUser, string servicePassword, CancellationToken cancellationToken = default)
+    {
+        var response = await SendSoapRequestAsync("get_waybill_tamplates", new Dictionary<string, string>
+        {
+            ["su"] = serviceUser,
+            ["sp"] = servicePassword
+        }, cancellationToken);
+        return ParseTemplates(response);
+    }
+
+    public async Task<WayBillTemplate?> GetWayBillTemplateAsync(string serviceUser, string servicePassword, int id, CancellationToken cancellationToken = default)
+    {
+        var response = await SendSoapRequestAsync("get_waybill_tamplate", new Dictionary<string, string>
+        {
+            ["su"] = serviceUser,
+            ["sp"] = servicePassword,
+            ["id"] = id.ToString()
+        }, cancellationToken);
+        var templates = ParseTemplates(response);
+        return templates.FirstOrDefault();
+    }
+
+    public async Task<bool> DeleteWayBillTemplateAsync(string serviceUser, string servicePassword, int id, CancellationToken cancellationToken = default)
+    {
+        var response = await SendSoapRequestAsync("delete_waybill_tamplate", new Dictionary<string, string>
+        {
+            ["su"] = serviceUser,
+            ["sp"] = servicePassword,
+            ["id"] = id.ToString()
+        }, cancellationToken);
+        return ParseBoolResponse(response, "delete_waybill_tamplateResult");
+    }
+
+    #endregion
+
     #region Invoice Operations
 
     public async Task<bool> SaveInvoiceAsync(string serviceUser, string servicePassword, SaveInvoiceRequest request, CancellationToken cancellationToken = default)
@@ -376,7 +721,7 @@ public class WayBillSoapClient : SoapClientBase, IWayBillSoapClient
 
     #endregion
 
-    #region Additional Operations
+    #region Vehicle Management
 
     public async Task<int> GetCarNumbersAsync(string serviceUser, string servicePassword, string carNumber, CancellationToken cancellationToken = default)
     {
@@ -388,6 +733,32 @@ public class WayBillSoapClient : SoapClientBase, IWayBillSoapClient
         }, cancellationToken);
         return ParseIntResponse(response, "get_car_numbersResult");
     }
+
+    public async Task<bool> SaveCarNumberAsync(string serviceUser, string servicePassword, string carNumber, CancellationToken cancellationToken = default)
+    {
+        var response = await SendSoapRequestAsync("save_car_numbers", new Dictionary<string, string>
+        {
+            ["su"] = serviceUser,
+            ["sp"] = servicePassword,
+            ["car_number"] = carNumber
+        }, cancellationToken);
+        return ParseBoolResponse(response, "save_car_numbersResult");
+    }
+
+    public async Task<bool> DeleteCarNumberAsync(string serviceUser, string servicePassword, string carNumber, CancellationToken cancellationToken = default)
+    {
+        var response = await SendSoapRequestAsync("delete_car_numbers", new Dictionary<string, string>
+        {
+            ["su"] = serviceUser,
+            ["sp"] = servicePassword,
+            ["car_number"] = carNumber
+        }, cancellationToken);
+        return ParseBoolResponse(response, "delete_car_numbersResult");
+    }
+
+    #endregion
+
+    #region Additional Operations
 
     public async Task<bool> SyncWayBillAsync(string serviceUser, string servicePassword, int waybillId, CancellationToken cancellationToken = default)
     {
@@ -837,6 +1208,99 @@ public class WayBillSoapClient : SoapClientBase, IWayBillSoapClient
             WaybillId = waybillId,
             IsSuccess = isSuccess,
             Message = isSuccess ? "Success" : value
+        };
+    }
+
+    private static List<AkcizCode> ParseAkcizCodes(XDocument doc)
+    {
+        var result = new List<AkcizCode>();
+        foreach (var element in doc.Descendants().Where(e => e.Name.LocalName is "AKCIZ_CODE" or "AKCIZ"))
+        {
+            string GetVal(string name) => element.Elements().FirstOrDefault(e => e.Name.LocalName == name)?.Value ?? string.Empty;
+            result.Add(new AkcizCode
+            {
+                Id = int.TryParse(GetVal("ID"), out var id) ? id : 0,
+                Name = GetVal("NAME"),
+                Code = GetVal("CODE")
+            });
+        }
+        return result;
+    }
+
+    private static List<WoodType> ParseWoodTypes(XDocument doc)
+    {
+        var result = new List<WoodType>();
+        foreach (var element in doc.Descendants().Where(e => e.Name.LocalName == "WOOD_TYPE"))
+        {
+            result.Add(new WoodType
+            {
+                Id = int.TryParse(element.Elements().FirstOrDefault(e => e.Name.LocalName == "ID")?.Value, out var id) ? id : 0,
+                Name = element.Elements().FirstOrDefault(e => e.Name.LocalName == "NAME")?.Value ?? string.Empty
+            });
+        }
+        return result;
+    }
+
+    private static List<WayBillGood> ParseGoodsList(XDocument doc)
+    {
+        var result = new List<WayBillGood>();
+        foreach (var goodElement in doc.Descendants().Where(e => e.Name.LocalName == "GOODS"))
+        {
+            string GetValue(string name) => goodElement.Elements().FirstOrDefault(e => e.Name.LocalName == name)?.Value ?? string.Empty;
+            result.Add(new WayBillGood
+            {
+                Id = int.TryParse(GetValue("ID"), out var goodId) ? goodId : 0,
+                WCode = GetValue("W_CODE"),
+                BarCode = GetValue("BAR_CODE"),
+                Name = GetValue("W_NAME"),
+                UnitId = int.TryParse(GetValue("UNIT_ID"), out var unitId) ? unitId : 0,
+                UnitName = GetValue("UNIT_NAME"),
+                Quantity = decimal.TryParse(GetValue("QUANTITY"), out var qty) ? qty : 0,
+                Price = decimal.TryParse(GetValue("PRICE"), out var price) ? price : 0,
+                Amount = decimal.TryParse(GetValue("AMOUNT"), out var amount) ? amount : 0,
+                VatType = GetValue("VAT_TYPE")
+            });
+        }
+        return result;
+    }
+
+    private static List<WayBillTemplate> ParseTemplates(XDocument doc)
+    {
+        var result = new List<WayBillTemplate>();
+        foreach (var element in doc.Descendants().Where(e => e.Name.LocalName == "TAMPLATE"))
+        {
+            string GetVal(string name) => element.Elements().FirstOrDefault(e => e.Name.LocalName == name)?.Value ?? string.Empty;
+            result.Add(new WayBillTemplate
+            {
+                Id = int.TryParse(GetVal("ID"), out var id) ? id : 0,
+                Name = GetVal("NAME")
+            });
+        }
+        return result;
+    }
+
+    private static Dictionary<string, string> BuildExFilterParams(string serviceUser, string servicePassword, GetWayBillsExRequest request)
+    {
+        return new Dictionary<string, string>
+        {
+            ["su"] = serviceUser,
+            ["sp"] = servicePassword,
+            ["buyer_tin"] = request.BuyerTin ?? "",
+            ["statuses"] = request.Statuses ?? "",
+            ["car_number"] = request.CarNumber ?? "",
+            ["begin_date_s"] = request.BeginDateFrom?.ToString("yyyy-MM-dd") ?? "",
+            ["begin_date_e"] = request.BeginDateTo?.ToString("yyyy-MM-dd") ?? "",
+            ["create_date_s"] = request.CreateDateFrom?.ToString("yyyy-MM-dd") ?? "",
+            ["create_date_e"] = request.CreateDateTo?.ToString("yyyy-MM-dd") ?? "",
+            ["driver_tin"] = request.DriverTin ?? "",
+            ["delivery_date_s"] = request.DeliveryDateFrom?.ToString("yyyy-MM-dd") ?? "",
+            ["delivery_date_e"] = request.DeliveryDateTo?.ToString("yyyy-MM-dd") ?? "",
+            ["full_amount"] = request.FullAmount ?? "",
+            ["waybill_number"] = request.WaybillNumber ?? "",
+            ["close_date_s"] = request.CloseDateFrom?.ToString("yyyy-MM-dd") ?? "",
+            ["close_date_e"] = request.CloseDateTo?.ToString("yyyy-MM-dd") ?? "",
+            ["s_user_ids"] = request.SUserIds ?? "",
+            ["comment"] = request.Comment ?? ""
         };
     }
 

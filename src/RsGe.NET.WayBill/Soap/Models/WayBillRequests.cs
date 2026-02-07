@@ -81,3 +81,64 @@ public class ActivateSubWayBillRequest
     public DateTime BeginDate { get; set; }
     public string? DeliveryAddress { get; set; }
 }
+
+public class GetWayBillsExRequest
+{
+    public string? BuyerTin { get; set; }
+    public string? Statuses { get; set; }
+    public string? CarNumber { get; set; }
+    public DateTime? BeginDateFrom { get; set; }
+    public DateTime? BeginDateTo { get; set; }
+    public DateTime? CreateDateFrom { get; set; }
+    public DateTime? CreateDateTo { get; set; }
+    public string? DriverTin { get; set; }
+    public DateTime? DeliveryDateFrom { get; set; }
+    public DateTime? DeliveryDateTo { get; set; }
+    public string? FullAmount { get; set; }
+    public string? WaybillNumber { get; set; }
+    public DateTime? CloseDateFrom { get; set; }
+    public DateTime? CloseDateTo { get; set; }
+    public string? SUserIds { get; set; }
+    public string? Comment { get; set; }
+}
+
+public class GetTransporterWayBillsRequest
+{
+    public string? BuyerTin { get; set; }
+    public string? Statuses { get; set; }
+    public string? CarNumber { get; set; }
+    public DateTime? BeginDateFrom { get; set; }
+    public DateTime? BeginDateTo { get; set; }
+    public DateTime? CreateDateFrom { get; set; }
+    public DateTime? CreateDateTo { get; set; }
+    public DateTime? DeliveryDateFrom { get; set; }
+    public DateTime? DeliveryDateTo { get; set; }
+    public DateTime? CloseDateFrom { get; set; }
+    public DateTime? CloseDateTo { get; set; }
+    public string? FullAmount { get; set; }
+    public string? WaybillNumber { get; set; }
+    public string? SUserIds { get; set; }
+    public string? Comment { get; set; }
+    public int? IsConfirmed { get; set; }
+}
+
+public class SaveWayBillTransporterRequest
+{
+    public int WaybillId { get; set; }
+    public string CarNumber { get; set; } = string.Empty;
+    public string DriverTin { get; set; } = string.Empty;
+    public int CheckDriverTin { get; set; } = 1;
+    public string DriverName { get; set; } = string.Empty;
+    public int TransportTypeId { get; set; }
+    public string? TransportTypeTxt { get; set; }
+    public string? ReceptionInfo { get; set; }
+    public string? ReceiverInfo { get; set; }
+}
+
+public class CloseWayBillTransporterRequest
+{
+    public int WaybillId { get; set; }
+    public string? ReceptionInfo { get; set; }
+    public string? ReceiverInfo { get; set; }
+    public DateTime DeliveryDate { get; set; }
+}

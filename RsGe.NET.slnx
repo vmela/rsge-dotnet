@@ -1,10 +1,16 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/RsGe.NET.Core/RsGe.NET.Core.csproj" />
+    <Project Path="src/RsGe.NET.Invoice/RsGe.NET.Invoice.csproj" />
     <Project Path="src/RsGe.NET.Server/RsGe.NET.Server.csproj" />
+    <Project Path="src/RsGe.NET.SpecInvoice/RsGe.NET.SpecInvoice.csproj" />
+    <Project Path="src/RsGe.NET.TaxPayer/RsGe.NET.TaxPayer.csproj" />
     <Project Path="src/RsGe.NET.WayBill/RsGe.NET.WayBill.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/RsGe.NET.Invoice.Tests/RsGe.NET.Invoice.Tests.csproj" />
+    <Project Path="tests/RsGe.NET.SpecInvoice.Tests/RsGe.NET.SpecInvoice.Tests.csproj" />
+    <Project Path="tests/RsGe.NET.TaxPayer.Tests/RsGe.NET.TaxPayer.Tests.csproj" />
     <Project Path="tests/RsGe.NET.WayBill.Tests/RsGe.NET.WayBill.Tests.csproj" />
   </Folder>
 </Solution>
