@@ -1,0 +1,22 @@
+{
+  "RsGe": {
+    "ServiceUser": "TEST13313:206322102",
+    "ServicePassword": "Uzurpatori$1",
+    "CompanyTin": "206322102",
+
+    "TaxPayer": {
+      "Username": "TEST13313:206322102",
+      "Password": "Uzurpatori$1"
+    },
+
+    "Invoice": {
+      "ServiceUser": "TEST13313:206322102",
+      "ServicePassword": "Uzurpatori$1"
+    },
+
+    "SpecInvoice": {
+      "ServiceUser": "TEST13313:206322102",
+      "ServicePassword": "Uzurpatori$1"
+    }
+  }
+}
